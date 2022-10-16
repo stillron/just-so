@@ -6,11 +6,11 @@ Requires=local-fs.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash /usr/local/bin/btrfs-rollback.sh %i
+ExecStart=/bin/bash /usr/local/bin/btrfs-rollback.sh rollback %i
 RemainAfterExit=True
 #Allow the system to settle
 #ExecStop=/bin/sleep 1
-ExecStop=/bin/bash /usr/local/bin/btrfs-rollback.sh %i
+ExecStop=/bin/bash /usr/local/bin/btrfs-rollback.sh rollback %i
 
 [Install]
 WantedBy=multi-user.target
