@@ -21,7 +21,7 @@ rollback() {
     local LATEST
     create_mountpoint
     mount "$ROOT_PART" "$BTRFS_MOUNT"
-    if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*) && [[ -d ${dirs[0]} ]]; then
+    if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
         echo "profiles exist"
         LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$1"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
     else
