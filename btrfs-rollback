@@ -24,11 +24,31 @@ rollback() {
     fi
 }
 
+make() { #create a new profile revertable profile
+#create user
+#set password
+#populate folders
+#rename users home folder to temp
+#create subvolume
+#create entry in fstab
+#mount btrfs subvolume
+#change ownership to the user
+#copy the contents of the temp folder to the new permanent folder
+#create folder in /.snapshots
+#take initial snapshot
+
+    echo "hello world"
+}
+
 #Determine which function the user passed in to the command
 
 case "$1" in
 "") ;;
 rollback)
+    "$@"
+    exit
+    ;;
+make)
     "$@"
     exit
     ;;
