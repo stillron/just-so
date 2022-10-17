@@ -25,17 +25,32 @@ rollback() {
 }
 
 make() { #create a new profile revertable profile
-#create user
-#set password
-#populate folders
-#rename users home folder to temp
-#create subvolume
-#create entry in fstab
-#mount btrfs subvolume
-#change ownership to the user
-#copy the contents of the temp folder to the new permanent folder
-#create folder in /.snapshots
-#take initial snapshot
+    local PROFILE="$1"
+    local HOME_FOLDER=/home/"$PROFILE"
+    local TEMP_FOLDER=/home/TEMP
+
+    #create user
+    useradd -m -s /bin/bash "$PROFILE"
+    #set password
+    passwd "$PROFILE"
+    #populate folders
+    su -c xdg-user-dirs-update "$PROFILE"
+    #rename users home folder to temp
+    mv "$HOME_FOLDER" "$TEMP_FOLDER"
+    #create subvolume
+    btrfs subvolume create /root/toplevel/@"$PROFILE"
+    #create entry in fstab
+    ROOT_LINE=$(grep subvol=@" " /etc/fstab)
+    TEMP_ENTRY=${ROOT_LINE//subvol=@/subvol=@"$PROFILE"}
+    NEW_ENTRY=${TEMP_ENTRY/\//\/home/"$PROFILE"}
+    echo "$NEW_ENTRY"
+    #TODO:  Insert "NEW_ENTRY" into fstab
+    
+    #mount btrfs subvolume
+    #change ownership to the user
+    #copy the contents of the temp folder to the new permanent folder
+    #create folder in /.snapshots
+    #take initial snapshot
 
     echo "hello world"
 }
