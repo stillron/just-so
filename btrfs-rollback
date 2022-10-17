@@ -7,7 +7,7 @@ ROOT_PART=/dev/vda3
 
 #Functions
 
-create_mountpoint() {
+MakeMP() {
     if [[ ! -d "$BTRFS_MOUNT" ]]; then
         echo "Creating folder \"$BTRFS_MOUNT\""
         mkdir "$BTRFS_MOUNT"
@@ -15,26 +15,27 @@ create_mountpoint() {
 }
 
 rollback() {
-    #Variables
     local PROFILE="$1"
     local HOME_FOLDER=/home/"$PROFILE"
     local LATEST
-    create_mountpoint
+
+    MakeMP
     mount "$ROOT_PART" "$BTRFS_MOUNT"
+    
     if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
         echo "profiles exist"
         LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$1"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
+        umount "$HOME_FOLDER"
+        echo "@$PROFILE"
+        btrfs subvolume delete -c "$BTRFS_MOUNT"/@"$PROFILE"
+        btrfs subvolume snapshot "$LATEST" "$BTRFS_MOUNT"/@"$PROFILE"
+        umount "$BTRFS_MOUNT"
+        mount "$HOME_FOLDER"
     else
         echo "No profiles don't exist for '$PROFILE'"
         umount "$BTRFS_MOUNT"
         exit 2
     fi
-    umount "$HOME_FOLDER"
-    echo "@$PROFILE"
-    btrfs subvolume delete -c "$BTRFS_MOUNT"/@"$PROFILE"
-    btrfs subvolume snapshot "$LATEST" "$BTRFS_MOUNT"/@"$PROFILE"
-    umount "$BTRFS_MOUNT"
-    mount "$HOME_FOLDER"
 }
 
 #Determine which function the user passed in to the command
