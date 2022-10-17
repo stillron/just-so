@@ -2,38 +2,24 @@
 
 #Global Variables
 
-BTRFS_MOUNT=/tmp/subs
-ROOT_PART=/dev/vda3
+BTRFS_MOUNT=/root/toplevel
 
 #Functions
-
-MakeMP() {
-    if [[ ! -d "$BTRFS_MOUNT" ]]; then
-        echo "Creating folder \"$BTRFS_MOUNT\""
-        mkdir "$BTRFS_MOUNT"
-    fi
-}
 
 rollback() {
     local PROFILE="$1"
     local HOME_FOLDER=/home/"$PROFILE"
     local LATEST
 
-    MakeMP
-    mount "$ROOT_PART" "$BTRFS_MOUNT"
-    
     if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
-        echo "profiles exist"
         LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$1"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
+        printf 'Snapshots exist for %s.\nBeginning rollback to latest snapshot at %s\n' "$PROFILE" "$LATEST"
         umount "$HOME_FOLDER"
-        echo "@$PROFILE"
         btrfs subvolume delete -c "$BTRFS_MOUNT"/@"$PROFILE"
         btrfs subvolume snapshot "$LATEST" "$BTRFS_MOUNT"/@"$PROFILE"
-        umount "$BTRFS_MOUNT"
         mount "$HOME_FOLDER"
     else
-        echo "No profiles don't exist for '$PROFILE'"
-        umount "$BTRFS_MOUNT"
+        echo "No snapshots exist for '$PROFILE'"
         exit 2
     fi
 }
