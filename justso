@@ -3,6 +3,8 @@
 #Global Variables
 
 BTRFS_MOUNT=/root/toplevel
+SNAPS="$BTRFS_MOUNT"/@snapshots
+MNT_OPTS="rw,noatime,compress=zstd:1,space_cache=v2"
 
 #Functions
 
@@ -11,6 +13,8 @@ back() {
     local HOME_FOLDER=/home/"$PROFILE"
     local LATEST
 
+    mount -o "$MNT_OPTS" /dev/vda3 "$BTRFS_MOUNT"
+
     if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
         LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$1"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
         printf 'Snapshots exist for %s.\nBeginning rollback to latest snapshot at %s\n' "$PROFILE" "$LATEST"
@@ -18,8 +22,10 @@ back() {
         btrfs subvolume delete -c "$BTRFS_MOUNT"/@"$PROFILE"
         btrfs subvolume snapshot "$LATEST" "$BTRFS_MOUNT"/@"$PROFILE"
         mount "$HOME_FOLDER"
+        umount "$BTRFS_MOUNT"
     else
         echo "No snapshots exist for '$PROFILE'"
+        umount "$BTRFS_MOUNT"
         exit 2
     fi
 }
@@ -39,8 +45,10 @@ make() { #create a new profile revertable profile
     useradd -M -s /bin/bash "$PROFILE"
     #set password
     passwd "$PROFILE"
+    #mount toplevel
+    mount -o "$MNT_OPTS" /dev/vda3 "$BTRFS_MOUNT"
     #create subvolume
-    btrfs subvolume create /root/toplevel/@"$PROFILE"
+    btrfs subvolume create "${BTRFS_MOUNT}/@${PROFILE}"
     #create entry in fstab
     ROOT_LINE=$(grep subvol=@" " /etc/fstab)
     TEMP_ENTRY=${ROOT_LINE//subvol=@/subvol=@"$PROFILE"}
@@ -59,11 +67,14 @@ make() { #create a new profile revertable profile
     su -c "cp -r /etc/skel/. /home/$PROFILE" "$PROFILE"
     su -c xdg-user-dirs-update "$PROFILE"
     #create folder in /.snapshots
-    if [ ! -d /.snapshots/"${PROFILE}" ]; then
-        mkdir /.snapshots/"${PROFILE}"
+    if [ ! -d "${SNAPS}/${PROFILE}" ]; then
+        mkdir "${SNAPS}/${PROFILE}"
     fi
     #take initial snapshot
-    btrfs subvolume snapshot -r "$HOME_FOLDER" /.snapshots/"${PROFILE}"/"${PROFILE}-${NOW}"
+    btrfs subvolume snapshot -r "$HOME_FOLDER" "${SNAPS}/${PROFILE}/${PROFILE}-${NOW}"
+
+    #unmount toplevel
+    umount "$BTRFS_MOUNT"
 
     
 }
