@@ -6,7 +6,7 @@ BTRFS_MOUNT=/root/toplevel
 
 #Functions
 
-rollback() {
+back() {
     local PROFILE="$1"
     local HOME_FOLDER=/home/"$PROFILE"
     local LATEST
@@ -72,7 +72,7 @@ make() { #create a new profile revertable profile
 
 case "$1" in
 "") ;;
-rollback)
+back)
     "$@"
     exit
     ;;
