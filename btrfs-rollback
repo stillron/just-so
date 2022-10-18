@@ -63,7 +63,7 @@ make() { #create a new profile revertable profile
         mkdir /.snapshots/"${PROFILE}"
     fi
     #take initial snapshot
-    btrfs subvolume snapshot -r "${HOME_FOLDER}" /.snapshots/"${PROFILE}"/"${PROFILE}-${NOW}"
+    btrfs subvolume snapshot -r "$HOME_FOLDER" /.snapshots/"${PROFILE}"/"${PROFILE}-${NOW}"
 
     
 }
