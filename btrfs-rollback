@@ -27,16 +27,11 @@ rollback() {
 make() { #create a new profile revertable profile
     local PROFILE="$1"
     local HOME_FOLDER=/home/"$PROFILE"
-    local TEMP_FOLDER=/home/TEMP
 
-    #create user
-    useradd -m -s /bin/bash "$PROFILE"
+    #create user w/o home folder (will be created manually later)
+    useradd -M -s /bin/bash "$PROFILE"
     #set password
     passwd "$PROFILE"
-    #populate folders
-    su -c xdg-user-dirs-update "$PROFILE"
-    #rename users home folder to temp
-    mv "$HOME_FOLDER" "$TEMP_FOLDER"
     #create subvolume
     btrfs subvolume create /root/toplevel/@"$PROFILE"
     #create entry in fstab
@@ -45,10 +40,13 @@ make() { #create a new profile revertable profile
     NEW_ENTRY=${TEMP_ENTRY/\//\/home/"$PROFILE"}
     echo "$NEW_ENTRY"
     #TODO:  Insert "NEW_ENTRY" into fstab
-    
+    #make home folder
+    mkdir /home/"$PROFILE"
+    chown "$PROFILE":"$PROFILE" /home/"$PROFILE"   
     #mount btrfs subvolume
-    #change ownership to the user
-    #copy the contents of the temp folder to the new permanent folder
+    #Propulate the home folder with default files and folders
+    su -c "cp -r /etc/skel/. /home/$PROFILE" "$PROFILE"
+    su -c xdg-user-dirs-update "$PROFILE"
     #create folder in /.snapshots
     #take initial snapshot
 
