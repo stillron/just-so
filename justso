@@ -43,46 +43,64 @@ make() { #create a new profile revertable profile
 
     #create user w/o home folder (will be created manually later)
     useradd -M -s /bin/bash "$PROFILE"
+
     #set password
     passwd "$PROFILE"
+
     #mount toplevel
     mount -o "$MNT_OPTS" /dev/vda3 "$BTRFS_MOUNT"
+
     #create subvolume
     btrfs subvolume create "${BTRFS_MOUNT}/@${PROFILE}"
+
     #create entry in fstab
     ROOT_LINE=$(grep subvol=@" " /etc/fstab)
     TEMP_ENTRY=${ROOT_LINE//subvol=@/subvol=@"$PROFILE"}
     NEW_ENTRY=${TEMP_ENTRY/\//\/home/"$PROFILE"}
     echo "$NEW_ENTRY"
+
     #Create a backup of fstab
     cp -a /etc/fstab /root/fstab_backup/fstab."${NOW}".bak
+
     #Insert "NEW_ENTRY" into fstab
     sed --in-place=.bak "/^.*\/home.*/a $NEW_ENTRY" /etc/fstab
+
     #make home folder
     mkdir "$HOME_FOLDER"
+
     #mount btrfs subvolume and set ownership
     mount "$HOME_FOLDER"
     chown "$PROFILE":"$PROFILE" /home/"$PROFILE"
+
     #Propulate the home folder with default files and folders
     su -c "cp -r /etc/skel/. /home/$PROFILE" "$PROFILE"
     su -c xdg-user-dirs-update "$PROFILE"
+
     #create folder in /.snapshots
     if [ ! -d "${SNAPS}/${PROFILE}" ]; then
         mkdir "${SNAPS}/${PROFILE}"
     fi
+
     #take initial snapshot
     btrfs subvolume snapshot -r "$HOME_FOLDER" "${SNAPS}/${PROFILE}/${PROFILE}-${NOW}"
 
     #unmount toplevel
     umount "$BTRFS_MOUNT"
 
-    
+}
+
+init() { #Creates environment for justso
+    echo "Hello world!"
 }
 
 #Determine which function the user passed in to the command
 
 case "$1" in
 "") ;;
+init)
+    "$@"
+    exit
+    ;;
 back)
     "$@"
     exit
