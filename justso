@@ -90,13 +90,21 @@ make() { #create a new profile revertable profile
 }
 
 init() { #Creates environment for justso
-    echo "Hello world!"
+    echo "Hello world, I'm init"
+}
+
+pin() { #Creates a new snapshot of a profile
+    echo "Hello world, I'm pin"
 }
 
 #Determine which function the user passed in to the command
 
 case "$1" in
 "") ;;
+pin)
+    "$@"
+    exit
+    ;;
 init)
     "$@"
     exit
