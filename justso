@@ -98,13 +98,21 @@ pin() { #Creates a new snapshot of a profile
 }
 
 unpin() { #Removes the latest n snapshots defaults to 1
-    echo "Hellow world, I'm unpin.  Looks like you wanna rollback $2 snapshot(s)"
+    echo "Hello world, I'm unpin.  Looks like you wanna rollback $2 snapshot(s)"
+}
+
+destroy() { #Completely removes a profile
+    echo "Hello world, I am destroy.  Destroyer of profiles"
 }
 
 #Determine which function the user passed in to the command
 
 case "$1" in
 "") ;;
+destroy)
+    "$@"
+    exit
+    ;;
 unpin)
     "$@"
     exit
