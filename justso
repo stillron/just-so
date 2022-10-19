@@ -101,6 +101,10 @@ unpin() { #Removes the latest n snapshots defaults to 1
     echo "Hello world, I'm unpin.  Looks like you wanna rollback $2 snapshot(s)"
 }
 
+revert() { #Unpins and rolls profile back to previous profile
+    echo "Hellow world, I am unpin that's just a little tidier."
+}
+
 destroy() { #Completely removes a profile
     echo "Hello world, I am destroy.  Destroyer of profiles"
 }
@@ -109,6 +113,10 @@ destroy() { #Completely removes a profile
 
 case "$1" in
 "") ;;
+revert)
+    "$@"
+    exit
+    ;;
 destroy)
     "$@"
     exit
