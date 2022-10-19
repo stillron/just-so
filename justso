@@ -105,6 +105,10 @@ revert() { #Unpins and rolls profile back to previous profile
     echo "Hellow world, I am unpin that's just a little tidier."
 }
 
+prune() { #Removes the N number of oldest snapshots
+    echo "Hello, I'm prune.  I take care of your old snapshots"
+}
+
 destroy() { #Completely removes a profile
     echo "Hello world, I am destroy.  Destroyer of profiles"
 }
@@ -113,6 +117,10 @@ destroy() { #Completely removes a profile
 
 case "$1" in
 "") ;;
+prune)
+    "$@"
+    exit
+    ;;
 revert)
     "$@"
     exit
