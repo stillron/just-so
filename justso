@@ -106,8 +106,12 @@ init() { #Creates environment for justso
         echo "Folder exists at /root/toplevel"
     fi
     #Attempting to mount root volume at /root/toplevel
-    echo "still need to work on mounting /root/toplevel"
-    
+    if grep -q 'root/toplevel\s' /etc/fstab && grep -q 'root/toplevel\s' /etc/mtab; then
+        echo "/root/toplevel is already mounted"
+    else
+        (mount /root/toplevel && echo "Mounted /root/toplevel") || "Failed to mount /root/toplevel"
+    fi
+
     #Checking for the existence of @snapshots subvolume
     # if btrfs subvolume show /root/toplevel/@snapshots >/dev/null 2>&1; then
     #     echo "@snapshots subvolume exists"
