@@ -6,7 +6,7 @@ BTRFS_DEVICE=$(blkid --match-token TYPE="btrfs" --output device)
 BTRFS_MOUNT=/root/toplevel
 SNAPS="$BTRFS_MOUNT"/@snapshots
 MNT_OPTS="rw,noatime,compress=zstd:1,space_cache=v2"
-LATEST=1
+LATEST=""
 
 # Functions
 
@@ -17,6 +17,8 @@ getLatest() {
 
     if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
         LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$PROFILE"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
+    else
+        return 2
     fi
 }
 
