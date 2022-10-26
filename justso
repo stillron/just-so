@@ -2,6 +2,7 @@
 
 # Global Variables
 
+BTRFS_DEVICE=$(blkid --match-token TYPE="btrfs" --output device)
 BTRFS_MOUNT=/root/toplevel
 SNAPS="$BTRFS_MOUNT"/@snapshots
 MNT_OPTS="rw,noatime,compress=zstd:1,space_cache=v2"
@@ -13,7 +14,7 @@ back() {
     local HOME_FOLDER=/home/"$PROFILE"
     local LATEST
 
-    mount -o "$MNT_OPTS" /dev/vda3 "$BTRFS_MOUNT"
+    mount -o "$MNT_OPTS" "$BTRFS_DEVICE" "$BTRFS_MOUNT"
 
     if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
         LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$1"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
@@ -48,7 +49,7 @@ make() { # create a new profile revertable profile
     passwd "$PROFILE"
 
     # mount toplevel
-    mount -o "$MNT_OPTS" /dev/vda3 "$BTRFS_MOUNT"
+    mount -o "$MNT_OPTS" "$BTRFS_DEVICE" "$BTRFS_MOUNT"
 
     # create subvolume
     btrfs subvolume create "${BTRFS_MOUNT}/@${PROFILE}"
@@ -93,14 +94,14 @@ init() { #C reates environment for justso
     echo "Hello world, I'm init"
     # Checking for folder at /root/fstab_backup
     if [ ! -d /root/fstab_backup ]; then
-        mkdir /root/fstab_backup
+        mkdir /root/fstab_backup >/dev/null 2>&1
         echo "Created folder at /root/fstab_backup"
     else
         echo "Folder exists at /root/fstab_backup"
     fi
     # Checking for folder at /root/toplevel
     if [ ! -d /root/toplevel ]; then
-        mkdir /root/toplevel
+        mkdir /root/toplevel >/dev/null 2>&1
         echo "Created folder at /root/toplevel"
     else
         echo "Folder exists at /root/toplevel"
@@ -140,9 +141,9 @@ pin() { #Creates a new snapshot of a profile
     local NOW
     NOW=$(date --iso-8601=seconds)
 
-    mount /dev/vda3 $BTRFS_MOUNT
+    mount "$BTRFS_DEVICE" "$BTRFS_MOUNT"
     btrfs subvolume snapshot -r "$HOME_FOLDER" "${SNAPS}/${PROFILE}/${PROFILE}-${NOW}"
-    umount $BTRFS_MOUNT
+    umount "$BTRFS_MOUNT"
 }
 
 unpin() { #Removes the latest n snapshots defaults to 1
