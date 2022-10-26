@@ -6,18 +6,25 @@ BTRFS_DEVICE=$(blkid --match-token TYPE="btrfs" --output device)
 BTRFS_MOUNT=/root/toplevel
 SNAPS="$BTRFS_MOUNT"/@snapshots
 MNT_OPTS="rw,noatime,compress=zstd:1,space_cache=v2"
+LATEST=1
 
 # Functions
 
-back() {
-    local PROFILE="$1"
-    local HOME_FOLDER=/home/"$PROFILE"
-    local LATEST
+getLatest() {
+    PROFILE=$1
 
     mount -o "$MNT_OPTS" "$BTRFS_DEVICE" "$BTRFS_MOUNT"
 
     if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
-        LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$1"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
+        LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$PROFILE"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
+    fi
+}
+
+back() {
+    local PROFILE="$1"
+    local HOME_FOLDER=/home/"$PROFILE"
+
+    if getLatest "$PROFILE"; then
         printf 'Snapshots exist for %s.\nBeginning rollback to latest snapshot at %s\n' "$PROFILE" "$LATEST"
         umount "$HOME_FOLDER"
         btrfs subvolume delete -c "$BTRFS_MOUNT"/@"$PROFILE"
