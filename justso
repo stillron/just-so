@@ -51,13 +51,27 @@ make() { # create a new profile revertable profile
         mkdir /root/fstab_backup
     fi
 
+    # Check if user already exists
+    if [[ $(grep -qc $1 /etc/fstab) -ne 0 ]]; then
+        echo "profile already exists"
+        exit 2
+    fi
+
     # create user w/o home folder (will be created manually later)
-    useradd -M -s /bin/bash "$PROFILE"
+    if ! useradd -M -s /bin/bash "$PROFILE"; then
+        echo "There was a problem creating the profile. Exiting"
+        exit 2
+    fi
 
     # set password
-    passwd "$PROFILE"
+    if ! passwd "$PROFILE"; then
+        echo "There was a problem setting the password.  Profile not created"
+        #TODO userdel is just temporary, once we have destroy() we'll use that to clean up any subvolumes, etc
+        userdel -r "$PROFILE" >/dev/null 2>&1
+        exit 2
+    fi
 
-    # mount toplevel
+    # mount toplevel: NO LONGER NEEDED
     # mount -o "$MNT_OPTS" "$BTRFS_DEVICE" "$BTRFS_MOUNT"
 
     # create subvolume
