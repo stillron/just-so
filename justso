@@ -13,7 +13,9 @@ LATEST=""
 getLatest() {
     PROFILE=$1
 
-    # mount -o "$MNT_OPTS" "$BTRFS_DEVICE" "$BTRFS_MOUNT"
+    # TODO: is there any advantage to using the following method
+    # in order to avoid paths that aren't subvolumes?
+    # btrfs subvolume list --sort=-gen -o @snapshots | grep contrast | head -n 1 | cut -d " " -f 9
 
     if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
         LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$PROFILE"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
@@ -113,7 +115,7 @@ make() { # create a new profile revertable profile
 
 }
 
-init() { #C reates environment for justso
+init() { # Creates environment for justso
     echo "Hello world, I'm init"
     # Checking for folder at /root/fstab_backup
     if [ ! -d /root/fstab_backup ]; then
@@ -147,7 +149,7 @@ init() { #C reates environment for justso
         fi
     fi
 
-    # Unmount /root/toplevel
+    # Unmount /root/toplevel: No longer needed
 
     # if umount "$BTRFS_MOUNT"; then
     #     echo "/root/toplevel unmounted successfully!"
