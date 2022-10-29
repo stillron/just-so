@@ -172,11 +172,12 @@ pin() { #Creates a new snapshot of a profile
 }
 
 unpin() { #Removes the latest n snapshots defaults to 1
-    echo "Hello world, I'm unpin.  Looks like you wanna rollback $2 snapshot(s)"
+    num_back="${2:-1}"
+    echo "Hello world, I'm unpin.  Looks like you wanna rollback $num_back snapshot(s) from $1"
 }
 
 revert() { #Unpins and rolls profile back to previous profile
-    echo "Hellow world, I am unpin that's just a little tidier."
+    echo "Hello world, I am unpin that's just a little tidier."
 }
 
 prune() { #Removes the N number of oldest snapshots
