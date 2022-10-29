@@ -172,8 +172,20 @@ pin() { #Creates a new snapshot of a profile
 }
 
 unpin() { #Removes the latest n snapshots defaults to 1
+    local PROFILE="$1"
     num_back="${2:-1}"
-    echo "Hello world, I'm unpin.  Looks like you wanna rollback $num_back snapshot(s) from $1"
+    echo "Hello world, I'm unpin.  Looks like you wanna rollback $num_back snapshot(s) from $PROFILE"
+    for ((i = 1; i <= num_back; i++)); do
+        getLatest "$PROFILE"
+        if [[ "$LATEST" != "" ]]; then
+            echo "Deleting $LATEST"
+            btrfs subvolume delete -c "$LATEST"
+            LATEST=""
+        else
+            echo "Sorry, I've deleted $(( i-1 )) profiles, but no more exist"
+            exit 2
+        fi
+    done
 }
 
 revert() { #Unpins and rolls profile back to previous profile
