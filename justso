@@ -34,11 +34,11 @@ back() {
         btrfs subvolume delete -c "$BTRFS_MOUNT"/@"$PROFILE"
         btrfs subvolume snapshot "$LATEST" "$BTRFS_MOUNT"/@"$PROFILE"
         mount "$HOME_FOLDER"
-        # umount "$BTRFS_MOUNT"
+        return 0
     else
         echo "No snapshots exist for '$PROFILE'"
         # umount "$BTRFS_MOUNT"
-        exit 2
+        return 2
     fi
 }
 
@@ -192,13 +192,29 @@ unpin() { #Removes the latest n snapshots defaults to 1
             LATEST=""
         else
             echo "Sorry, I've deleted $((i - 1)) profiles, but no more exist"
-            exit 2
+            return 2
         fi
     done
+    return 0
 }
 
-revert() { #Unpins and rolls profile back to previous profile
+revert() { #Unpins n number of snapshots and rolls back to it
+    local PROFILE="$1"
+    num_back="${2:-1}"
     echo "Hello world, I am unpin that's just a little tidier."
+    if unpin "$PROFILE" "$num_back"; then
+        if back "$PROFILE"; then
+            echo "Successfully switched back to $num_back snapshots ago"
+            return 0
+        else
+            echo "Successfully unpined to $num_back snapshots ago, but something went wrong with the rollback"
+            return 1
+        fi
+    else
+        echo "Unable to revert $num_back number of snapshots and rollback."
+        return 2
+    fi
+
 }
 
 prune() { #Removes the N number of oldest snapshots
