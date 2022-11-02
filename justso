@@ -14,8 +14,9 @@ getLatest() {
     PROFILE=$1
 
     # TODO: is there any advantage to using the following method
-    # in order to avoid paths that aren't subvolumes?
-    # btrfs subvolume list --sort=-gen -o @snapshots | grep contrast | head -n 1 | cut -d " " -f 9
+    # in order to avoid paths that aren't subvolumes? Although, this commented version does just
+    # produce the snapshot so if we switch to it we'll need to include the path when we try to access it
+    # btrfs subvolume list --sort=-gen -o ${SNAPS} | grep ${PROFILE} | head -n 1 | cut -d " " -f 9
 
     if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
         LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$PROFILE"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
