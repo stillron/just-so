@@ -25,6 +25,16 @@ getLatest() {
     fi
 }
 
+getOldest() {
+    local PROFILE=$1
+
+    if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
+        OLDEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$PROFILE"/* | sort -n | head -n 1 | cut -f 4 -d " ")
+    else
+        return 2
+    fi
+}
+
 getNumSnaps() {
     local PROFILE=$1
 
@@ -190,7 +200,6 @@ pin() { #Creates a new snapshot of a profile
 unpin() { #Removes the latest n snapshots defaults to 1
     local PROFILE="$1"
     num_back="${2:-1}"
-    numSnaps=$(getNumSnaps "$PROFILE")
     echo "Hello world, I'm unpin.  Looks like you wanna rollback $num_back snapshot(s) from $PROFILE"
     for ((i = 1; i <= num_back; i++)); do
         getLatest "$PROFILE"
@@ -209,7 +218,7 @@ unpin() { #Removes the latest n snapshots defaults to 1
 revert() { #Unpins n number of snapshots and rolls back to it
     local PROFILE="$1"
     num_back="${2:-1}"
-    echo "Hello world, I am unpin that's just a little tidier."
+    echo "Hello world, I am like unpin, just a little tidier."
     if unpin "$PROFILE" "$num_back"; then
         if back "$PROFILE"; then
             echo "Successfully switched back to $num_back snapshots ago"
@@ -226,14 +235,38 @@ revert() { #Unpins n number of snapshots and rolls back to it
 }
 
 prune() { #Removes the N number of oldest snapshots
+    local PROFILE=$1
+    numPrune="${2:-1}"
     echo "Hello, I'm prune.  I take care of your old snapshots"
-    numSnaps=$(getNumSnaps $1)
-
-    echo "Looks like you have $numSnaps snapshots"
+    numSnaps=$(getNumSnaps "$PROFILE")
+    if  [[ numPrune -le numSnaps ]] ; then
+        for ((i = 1; i <= numPrune; i++)); do
+            getOldest "$PROFILE"
+            if [[ "$OLDEST" != "" ]]; then
+                echo "Deleting $OLDEST"
+                btrfs subvolume delete -c "$OLDEST"
+                OLDEST=""
+            else
+                echo "Sorry, I've deleted $((i - 1)) profiles, but no more exist"
+                return 2
+            fi
+        done
+        return 0
+    else
+    echo "$PROFILE only has $numSnaps snapshots, can't remove $numPrune"
+    return 2
+    fi
 }
 
 destroy() { #Completely removes a profile
+
+    local PROFILE=$1
     echo "Hello world, I am destroy.  Destroyer of profiles"
+
+    getOldest "$PROFILE"
+
+    echo "$OLDEST"
+
 }
 
 #Determine which function the user passed in to the command
