@@ -26,10 +26,9 @@ getLatest() {
 }
 
 getNumSnaps() {
-    PROFILE=$1
+    local PROFILE=$1
 
-    numSnaps=$(btrfs subvolume list -o "${SNAPS}/${PROFILE}" | wc -l)
-    return "$numSnaps"
+    echo $(btrfs subvolume list -o "${SNAPS}/${PROFILE}" | wc -l)
 }
 
 back() {
@@ -191,6 +190,7 @@ pin() { #Creates a new snapshot of a profile
 unpin() { #Removes the latest n snapshots defaults to 1
     local PROFILE="$1"
     num_back="${2:-1}"
+    numSnaps=$(getNumSnaps "$PROFILE")
     echo "Hello world, I'm unpin.  Looks like you wanna rollback $num_back snapshot(s) from $PROFILE"
     for ((i = 1; i <= num_back; i++)); do
         getLatest "$PROFILE"
@@ -227,6 +227,9 @@ revert() { #Unpins n number of snapshots and rolls back to it
 
 prune() { #Removes the N number of oldest snapshots
     echo "Hello, I'm prune.  I take care of your old snapshots"
+    numSnaps=$(getNumSnaps $1)
+
+    echo "Looks like you have $numSnaps snapshots"
 }
 
 destroy() { #Completely removes a profile
