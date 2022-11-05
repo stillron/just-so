@@ -25,6 +25,13 @@ getLatest() {
     fi
 }
 
+getNumSnaps() {
+    PROFILE=$1
+
+    numSnaps=$(btrfs subvolume list -o "${SNAPS}/${PROFILE}" | wc -l)
+    return "$numSnaps"
+}
+
 back() {
     local PROFILE="$1"
     local HOME_FOLDER=/home/"$PROFILE"
