@@ -239,7 +239,7 @@ prune() { #Removes the N number of oldest snapshots
     numPrune="${2:-1}"
     echo "Hello, I'm prune.  I take care of your old snapshots"
     numSnaps=$(getNumSnaps "$PROFILE")
-    if  [[ numPrune -le numSnaps ]] ; then
+    if [[ numPrune -le numSnaps ]]; then
         for ((i = 1; i <= numPrune; i++)); do
             getOldest "$PROFILE"
             if [[ "$OLDEST" != "" ]]; then
@@ -253,8 +253,8 @@ prune() { #Removes the N number of oldest snapshots
         done
         return 0
     else
-    echo "$PROFILE only has $numSnaps snapshots, can't remove $numPrune"
-    return 2
+        echo "$PROFILE only has $numSnaps snapshots, can't remove $numPrune"
+        return 2
     fi
 }
 
@@ -267,6 +267,32 @@ destroy() { #Completely removes a profile
 
     echo "$OLDEST"
 
+}
+
+enable() { #Enable systemd service for a profile
+    local PROFILE=$1
+
+    numSnaps=$(getNumSnaps "$PROFILE")
+
+    if [[ numSnaps -gt 1 ]]; then
+        if systemctl enable justso@"$PROFILE"; then
+            return 0
+        else
+            echo "Error enabling justso service for $PROFILE: @?"
+            return 2
+        fi
+    else
+        echo "$PROFILE does not have any snapshots, can't enable"
+        return 2
+    fi
+}
+
+disable() { #Disable systemd service for a profile
+    local PROFILE=$1
+}
+
+status() { # Display information about a profile
+    local PROFILE=$1
 }
 
 #Determine which function the user passed in to the command
@@ -304,6 +330,15 @@ back)
 make)
     "$@"
     exit
+    ;;
+enable)
+    "$@"
+    ;;
+disable)
+    "$@"
+    ;;
+status)
+    "$@"
     ;;
 *)
     echo "Unknown function: $1"
