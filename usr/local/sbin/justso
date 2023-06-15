@@ -1,0 +1,347 @@
+#!/bin/bash
+
+# Global Variables
+
+BTRFS_DEVICE=$(blkid --match-token TYPE="btrfs" --output device)
+BTRFS_MOUNT=/root/toplevel
+SNAPS="$BTRFS_MOUNT"/@snapshots
+MNT_OPTS="rw,noatime,compress=zstd:1,space_cache=v2"
+LATEST=""
+
+# Functions
+
+getLatest() {
+    PROFILE=$1
+
+    # TODO: is there any advantage to using the following method
+    # in order to avoid paths that aren't subvolumes? Although, this commented version does just
+    # produce the snapshot so if we switch to it we'll need to include the path when we try to access it
+    # btrfs subvolume list --sort=-gen -o ${SNAPS} | grep ${PROFILE} | head -n 1 | cut -d " " -f 9
+
+    if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
+        LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$PROFILE"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
+    else
+        return 2
+    fi
+}
+
+getOldest() {
+    local PROFILE=$1
+
+    if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
+        OLDEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$PROFILE"/* | sort -n | head -n 1 | cut -f 4 -d " ")
+    else
+        return 2
+    fi
+}
+
+getNumSnaps() {
+    local PROFILE=$1
+
+    echo $(btrfs subvolume list -o "${SNAPS}/${PROFILE}" | wc -l)
+}
+
+back() {
+    local PROFILE="$1"
+    local HOME_FOLDER=/home/"$PROFILE"
+
+    if getLatest "$PROFILE"; then
+        printf 'Snapshots exist for %s.\nBeginning rollback to latest snapshot at %s\n' "$PROFILE" "$LATEST"
+        umount "$HOME_FOLDER"
+        btrfs subvolume delete -c "$BTRFS_MOUNT"/@"$PROFILE"
+        btrfs subvolume snapshot "$LATEST" "$BTRFS_MOUNT"/@"$PROFILE"
+        mount "$HOME_FOLDER"
+        return 0
+    else
+        echo "No snapshots exist for '$PROFILE'"
+        # umount "$BTRFS_MOUNT"
+        return 2
+    fi
+}
+
+make() { # create a new profile revertable profile
+    local PROFILE="$1"
+    local HOME_FOLDER=/home/"$PROFILE"
+    local NOW
+    NOW=$(date --iso-8601=seconds)
+
+    # If fstab backup folder doesn't exist, create it
+    if [ ! -d /root/fstab_backup ]; then
+        mkdir /root/fstab_backup
+    fi
+
+    # Check if user already exists
+    if [[ $(grep -qc $1 /etc/fstab) -ne 0 ]]; then
+        echo "profile already exists"
+        exit 2
+    fi
+
+    # create user w/o home folder (will be created manually later)
+    if ! useradd -M -s /bin/bash "$PROFILE"; then
+        echo "There was a problem creating the profile. Exiting"
+        exit 2
+    fi
+
+    # set password
+    if ! passwd "$PROFILE"; then
+        echo "There was a problem setting the password.  Profile not created"
+        #TODO userdel is just temporary, once we have destroy() we'll use that to clean up any subvolumes, etc
+        userdel -r "$PROFILE" >/dev/null 2>&1
+        exit 2
+    fi
+
+    # mount toplevel: NO LONGER NEEDED
+    # mount -o "$MNT_OPTS" "$BTRFS_DEVICE" "$BTRFS_MOUNT"
+
+    # create subvolume
+    btrfs subvolume create "${BTRFS_MOUNT}/@${PROFILE}"
+
+    # create entry in fstab
+    ROOT_LINE=$(grep subvol=@" " /etc/fstab)
+    TEMP_ENTRY=${ROOT_LINE//subvol=@/subvol=@"$PROFILE"}
+    NEW_ENTRY=${TEMP_ENTRY/\//\/home/"$PROFILE"}
+    echo "$NEW_ENTRY"
+
+    # Create a backup of fstab
+    cp -a /etc/fstab /root/fstab_backup/fstab."${NOW}".bak
+
+    # Insert "NEW_ENTRY" into fstab
+    sed --in-place "/^.*\/home\s/a $NEW_ENTRY" /etc/fstab
+
+    # make home folder
+    mkdir "$HOME_FOLDER"
+
+    # mount btrfs subvolume and set ownership
+    mount "$HOME_FOLDER"
+    chown "$PROFILE":"$PROFILE" /home/"$PROFILE"
+
+    # Propulate the home folder with default files and folders
+    su -c "cp -r /etc/skel/. /home/$PROFILE" "$PROFILE"
+    su -c xdg-user-dirs-update "$PROFILE"
+
+    # create folder in /.snapshots
+    if [ ! -d "${SNAPS}/${PROFILE}" ]; then
+        mkdir "${SNAPS}/${PROFILE}"
+    fi
+
+    # take initial snapshot
+    btrfs subvolume snapshot -r "$HOME_FOLDER" "${SNAPS}/${PROFILE}/${PROFILE}-${NOW}"
+
+}
+
+init() { # Creates environment for justso
+    printf "Setting up system for justso\n\n"
+    NOW=$(date --iso-8601=seconds)
+
+    # Checking for folder at /root/fstab_backup
+    if [ ! -d /root/fstab_backup ]; then
+        mkdir /root/fstab_backup >/dev/null 2>&1
+        echo "Created folder at /root/fstab_backup"
+    else
+        echo "Folder exists at /root/fstab_backup"
+    fi
+    # Checking for folder at /root/toplevel
+    if [ ! -d /root/toplevel ]; then
+        mkdir /root/toplevel >/dev/null 2>&1
+        echo "Created folder at /root/toplevel"
+    else
+        echo "Folder exists at /root/toplevel"
+    fi
+
+    # Create entry in fstab to /root/toplevel
+    if ! grep -q '/root/toplevel\s' /etc/fstab; then
+        #Create backup of fstab
+        cp -a /etc/fstab /root/fstab_backup/fstab."${NOW}".bak
+        BTRFS_UUID=$(lsblk -o uuid,fstype | grep btrfs | cut -f 1 -d " ")
+        TOP_FS_ENTRY="UUID=${BTRFS_UUID} /root/toplevel btrfs ${MNT_OPTS} 0 0"
+        if sed --in-place "/^.*subvol=@\s/a ${TOP_FS_ENTRY}" /etc/fstab; then
+            echo "Successfully created entry for /root/toplevel in fstab"
+        else
+            echo "Problem creating entry for /root/toplevel in fstab.  Reverting fstab and Exiting"
+            cp -a /root/fstab_backup/fstab."${NOW}".bak /etc/fstab
+            exit 2
+        fi
+    else
+        echo "Entry for /root/toplevel exists in /etc/fstab"
+    fi
+
+    # Verify toplevel is mounted at /root/toplevel
+    if grep -q 'root/toplevel\s' /etc/fstab && grep -q 'root/toplevel\s' /etc/mtab; then
+        echo "/root/toplevel is mounted"
+    else
+        (mount /root/toplevel && echo "Mounted /root/toplevel") || "Failed to mount /root/toplevel"
+    fi
+
+    #Checking for the existence of @snapshots subvolume
+    if btrfs subvolume show /root/toplevel/@snapshots >/dev/null 2>&1; then
+        echo "@snapshots subvolume exists"
+    else
+        if btrfs subvolume create /root/toplevel/@snapshots >/dev/null 2>&1; then
+            echo "Successfully created @snapshots subvolume"
+        else
+            "There was an error creating the @snapshots subvolume: Error $?"
+        fi
+    fi
+
+    printf "\nThe system is now ready to use justso!\n\n"
+
+}
+
+pin() { #Creates a new snapshot of a profile
+    echo "Hello world, I'm pin"
+    local PROFILE="$1"
+    local HOME_FOLDER=/home/"$PROFILE"
+    local NOW
+    NOW=$(date --iso-8601=seconds)
+
+    btrfs subvolume snapshot -r "$HOME_FOLDER" "${SNAPS}/${PROFILE}/${PROFILE}-${NOW}"
+}
+
+unpin() { #Removes the latest n snapshots defaults to 1
+    local PROFILE="$1"
+    num_back="${2:-1}"
+    echo "Hello world, I'm unpin.  Looks like you wanna rollback $num_back snapshot(s) from $PROFILE"
+    for ((i = 1; i <= num_back; i++)); do
+        getLatest "$PROFILE"
+        if [[ "$LATEST" != "" ]]; then
+            echo "Deleting $LATEST"
+            btrfs subvolume delete -c "$LATEST"
+            LATEST=""
+        else
+            echo "Sorry, I've deleted $((i - 1)) profiles, but no more exist"
+            return 2
+        fi
+    done
+    return 0
+}
+
+revert() { #Unpins n number of snapshots and rolls back to it
+    local PROFILE="$1"
+    num_back="${2:-1}"
+    echo "Hello world, I am like unpin, just a little tidier."
+    if unpin "$PROFILE" "$num_back"; then
+        if back "$PROFILE"; then
+            echo "Successfully switched back to $num_back snapshots ago"
+            return 0
+        else
+            echo "Successfully unpined to $num_back snapshots ago, but something went wrong with the rollback"
+            return 1
+        fi
+    else
+        echo "Unable to revert $num_back number of snapshots and rollback."
+        return 2
+    fi
+
+}
+
+prune() { #Removes the N number of oldest snapshots
+    local PROFILE=$1
+    numPrune="${2:-1}"
+    echo "Hello, I'm prune.  I take care of your old snapshots"
+    numSnaps=$(getNumSnaps "$PROFILE")
+    if [[ numPrune -le numSnaps ]]; then
+        for ((i = 1; i <= numPrune; i++)); do
+            getOldest "$PROFILE"
+            if [[ "$OLDEST" != "" ]]; then
+                echo "Deleting $OLDEST"
+                btrfs subvolume delete -c "$OLDEST"
+                OLDEST=""
+            else
+                echo "Sorry, I've deleted $((i - 1)) profiles, but no more exist"
+                return 2
+            fi
+        done
+        return 0
+    else
+        echo "$PROFILE only has $numSnaps snapshots, can't remove $numPrune"
+        return 2
+    fi
+}
+
+destroy() { #Completely removes a profile
+
+    local PROFILE=$1
+    echo "Hello world, I am destroy.  Destroyer of profiles"
+
+    getOldest "$PROFILE"
+
+    echo "$OLDEST"
+
+}
+
+enable() { #Enable systemd service for a profile
+    local PROFILE=$1
+
+    numSnaps=$(getNumSnaps "$PROFILE")
+
+    if [[ numSnaps -gt 1 ]]; then
+        if systemctl enable justso@"$PROFILE"; then
+            return 0
+        else
+            echo "Error enabling justso service for $PROFILE: @?"
+            return 2
+        fi
+    else
+        echo "$PROFILE does not have any snapshots, can't enable"
+        return 2
+    fi
+}
+
+disable() { #Disable systemd service for a profile
+    local PROFILE=$1
+}
+
+status() { # Display information about a profile
+    local PROFILE=$1
+}
+
+#Determine which function the user passed in to the command
+
+case "$1" in
+"") ;;
+prune)
+    "$@"
+    exit
+    ;;
+revert)
+    "$@"
+    exit
+    ;;
+destroy)
+    "$@"
+    exit
+    ;;
+unpin)
+    "$@"
+    exit
+    ;;
+pin)
+    "$@"
+    exit
+    ;;
+init)
+    "$@"
+    exit
+    ;;
+back)
+    "$@"
+    exit
+    ;;
+make)
+    "$@"
+    exit
+    ;;
+enable)
+    "$@"
+    ;;
+disable)
+    "$@"
+    ;;
+status)
+    "$@"
+    ;;
+*)
+    echo "Unknown function: $1"
+    exit 2
+    ;;
+esac

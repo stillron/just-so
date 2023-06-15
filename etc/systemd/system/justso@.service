@@ -1,0 +1,17 @@
+[Unit]
+Description=Rollback Service for %i
+Before=gdm.service
+Requires=local-fs.target
+
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /usr/local/bin/justso back %i
+RemainAfterExit=True
+#Allow the system to settle
+#ExecStop=/bin/sleep 1
+ExecStop=/bin/bash /usr/local/bin/justso back %i
+
+[Install]
+WantedBy=multi-user.target
+
