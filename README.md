@@ -75,7 +75,7 @@ btrfs subvolume create @home
 * mount the root subvolume to target with:
 
 ```bash
-mount -o rw,noatime,compress=zstd,space_cache,subvol=@ /dev/sd<X> /target
+mount -o rw,noatime,compress=zstd,space_cache=v2,subvol=@ /dev/sd<X> /target
 ```
 
 * create directories to mount to inside of **/target**
@@ -85,7 +85,7 @@ mount -o rw,noatime,compress=zstd,space_cache,subvol=@ /dev/sd<X> /target
 * Mount **/home** with:
 
 ```bash
-mount -o rw,noatime,compress=zstd,space_cache,subvol=@home /dev/sd<X> /target/home
+mount -o rw,noatime,compress=zstd,space_cache=v2,subvol=@home /dev/sd<X> /target/home
 ```
 
 * Mount **/boot/efi** with
@@ -101,8 +101,8 @@ Now we need to reflect our recent changes in fstab.  Use `nano` to edit **/targe
 The lines for **/** and **/home** should look like the following:
 
 ```bash
-UUID=<(NO CHANGE NEEDED)> /  btrfs   rw,noatime,compress=zstd,space_cache,subvol=@   0 0
-UUID=<SAME AS ABOVE>      /  btrfs   rw,noatime,compress=zstd,space_cache,subvol=@home   0 0
+UUID=<(NO CHANGE NEEDED)> /  btrfs   rw,noatime,compress=zstd,space_cache=v2,subvol=@   0 0
+UUID=<SAME AS ABOVE>      /  btrfs   rw,noatime,compress=zstd,space_cache=v2,subvol=@home   0 0
 ```
 
 ### Return to installer
