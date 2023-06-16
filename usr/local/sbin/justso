@@ -130,6 +130,7 @@ make() { # create a new profile revertable profile
 }
 
 init() { # Creates environment for justso
+    
     printf "Setting up system for justso\n\n"
     NOW=$(date --iso-8601=seconds)
 
@@ -140,6 +141,7 @@ init() { # Creates environment for justso
     else
         echo "Folder exists at /root/fstab_backup"
     fi
+
     # Checking for folder at /root/toplevel
     if [ ! -d /root/toplevel ]; then
         mkdir /root/toplevel >/dev/null 2>&1
@@ -155,6 +157,8 @@ init() { # Creates environment for justso
         BTRFS_UUID=$(lsblk -o uuid,fstype | grep btrfs | cut -f 1 -d " ")
         TOP_FS_ENTRY="UUID=${BTRFS_UUID} /root/toplevel btrfs ${MNT_OPTS} 0 0"
         if sed --in-place "/^.*subvol=@\s/a ${TOP_FS_ENTRY}" /etc/fstab; then
+            #reload the new fstab into systemd
+            systemctl daemon-reload
             echo "Successfully created entry for /root/toplevel in fstab"
         else
             echo "Problem creating entry for /root/toplevel in fstab.  Reverting fstab and Exiting"
