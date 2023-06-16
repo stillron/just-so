@@ -80,7 +80,7 @@ mount -o rw,noatime,compress=zstd,space_cache=v2,subvol=@ /dev/sd<X> /target
 
 * create directories to mount to inside of **/target**
   * First `mkdir -p /target/boot/efi`
-    *then `mkdir /target/home`
+  * then `mkdir /target/home`
 
 * Mount **/home** with:
 
