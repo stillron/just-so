@@ -6,7 +6,7 @@ BTRFS-based snapshots provide automatic rollbacks of user home folders.
 
 ### Debian
 
-1. Start the setup process by Selecting `Advanced Options > Expert Install`
+* Start the setup process by Selecting `Advanced Options > Expert Install`
 * Go through:
   * Language
   * Keyboard
