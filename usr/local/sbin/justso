@@ -163,6 +163,7 @@ init() { # Creates environment for justso
         else
             echo "Problem creating entry for /root/toplevel in fstab.  Reverting fstab and Exiting"
             cp -a /root/fstab_backup/fstab."${NOW}".bak /etc/fstab
+            systemctl daemon-reload
             exit 2
         fi
     else
