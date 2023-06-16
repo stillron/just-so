@@ -61,11 +61,14 @@ BTRFS-based snapshots provide automatic rollbacks of user home folders.
 1. cd to `/mnt`
 1. rename root snapshot from `@rootfs` to `@`
 1. create @home subvolume with `btrfs subvolume create @home`
-1. mount the root subvolume to target with `mount -o rw,noatime,compress=zstd,space_cache,subvol=@ /dev/<PARTITION PREVIOUSLY MOUNTED TO _target_> /target`
+1. mount the root subvolume to target with 
+`mount -o rw,noatime,compress=zstd,space_cache,subvol=@ /dev/<PARTITION PREVIOUSLY MOUNTED TO _target_> /target`
 1. create directories to mount to inside of `/target`
     1. First `mkdir -p /target/boot/efi`
     1. then `mkdir /target/home`
-1. Mount `/home` with `mount -o rw,noatime,compress=zstd,space_cache,subvol=@home /dev/<PARTITION PREVIOUSLY MOUNTED TO _target_> /target/home`
-1. Mount `/boot/efi` with `mount /dev/<PARTITION PREVIOUSLY MOUNTED TO _boot/efi_> /target/boot/efi`
+1. Mount **/home** with 
+`mount -o rw,noatime,compress=zstd,space_cache,subvol=@home /dev/<PARTITION PREVIOUSLY MOUNTED TO _target_> /target/home`
+1. Mount **/boot/efi** with 
+`mount /dev/<PARTITION PREVIOUSLY MOUNTED TO _boot/efi_> /target/boot/efi`
 
 ## Usage
