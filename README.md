@@ -57,18 +57,48 @@ BTRFS-based snapshots provide automatic rollbacks of user home folders.
     * /target/boot/efi
 
 1. umount the two above partitions.
-1. mount whatever partition was previously mounted to `/target` to `/mnt` 
+1. mount whatever partition was previously mounted to `/target` to `/mnt`
 1. cd to `/mnt`
 1. rename root snapshot from `@rootfs` to `@`
-1. create @home subvolume with `btrfs subvolume create @home`
-1. mount the root subvolume to target with 
-`mount -o rw,noatime,compress=zstd,space_cache,subvol=@ /dev/<PARTITION PREVIOUSLY MOUNTED TO _target_> /target`
-1. create directories to mount to inside of `/target`
+1. create @home subvolume with:
+
+```bash
+btrfs subvolume create @home
+```
+
+9. mount the root subvolume to target with:
+
+```bash
+mount -o rw,noatime,compress=zstd,space_cache,subvol=@ /dev/sd<X> /target
+```
+
+10. create directories to mount to inside of **/target**
     1. First `mkdir -p /target/boot/efi`
     1. then `mkdir /target/home`
-1. Mount **/home** with 
-`mount -o rw,noatime,compress=zstd,space_cache,subvol=@home /dev/<PARTITION PREVIOUSLY MOUNTED TO _target_> /target/home`
-1. Mount **/boot/efi** with 
-`mount /dev/<PARTITION PREVIOUSLY MOUNTED TO _boot/efi_> /target/boot/efi`
+1. Mount **/home** with:
+
+```bash
+mount -o rw,noatime,compress=zstd,space_cache,subvol=@home /dev/sd<X> /target/home
+```
+
+12. Mount **/boot/efi** with
+
+```bash
+mount /dev/<PARTITION PREVIOUSLY MOUNTED TO _boot/efi_> /target/boot/efi
+```
+
+### Updating /etc/fstab
+
+Now we need to reflect our recent changes in fstab.  Use `nano` to edit **/target/etc/fstab**
+
+The lines for **/** and **/home** should look like the following:
+
+```bash
+UUID=<(NO CHANGE NEEDED)> /  btrfs   rw,noatime,compress=zstd,space_cache,subvol=@   0 0
+UUID=<SAME AS ABOVE>      /  btrfs   rw,noatime,compress=zstd,space_cache,subvol=@home   0 0
+```
+### Return to installer
+
+All manual updates are now done.  Return to installer by typing `exit` in the command line and then entering `CTRL+ALT+F1`
 
 ## Usage
