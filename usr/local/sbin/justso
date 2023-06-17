@@ -106,7 +106,7 @@ make() { # create a new profile revertable profile
     cp -a /etc/fstab /root/fstab_backup/fstab."${NOW}".bak
 
     # Insert "NEW_ENTRY" into fstab
-    sed --in-place "/^.*\/home\s/a $NEW_ENTRY" /etc/fstab
+    sed --in-place "/^.*subvol=@\s/a $NEW_ENTRY" /etc/fstab
 
     # Reload daemon for new fstab
     systemctl daemon-reload

@@ -66,32 +66,23 @@ BTRFS-based snapshots provide automatic rollbacks of user home folders.
 * mount whatever partition was previously mounted to `/target` to `/mnt`
 * cd to `/mnt`
 * rename root snapshot from `@rootfs` to `@`
-* create @home subvolume with:
-
-```bash
-btrfs subvolume create @home
-```
 
 * mount the root subvolume to target with:
 
 ```bash
-mount -o rw,noatime,compress=zstd:1,space_cache=v2,subvol=@ /dev/sd<X> /target
+mount -o rw,noatime,compress=zstd:1,space_cache=v2,subvol=@ /dev/<root partition> /target
 ```
 
-* create directories to mount to inside of **/target**
-  * First `mkdir -p /target/boot/efi`
-  * then `mkdir /target/home`
-
-* Mount **/home** with:
+* create efi directories to mount to inside of **/target**
 
 ```bash
-mount -o rw,noatime,compress=zstd:1,space_cache=v2,subvol=@home /dev/sd<X> /target/home
+mkdir -p /target/boot/efi
 ```
 
 * Mount **/boot/efi** with
 
 ```bash
-mount /dev/<PARTITION PREVIOUSLY MOUNTED TO _boot/efi_> /target/boot/efi
+mount /dev/<boot partition> /target/boot/efi
 ```
 
 ### Updating /etc/fstab
@@ -102,7 +93,6 @@ The lines for **/** and **/home** should look like the following:
 
 ```bash
 UUID=<(NO CHANGE NEEDED)> /  btrfs   rw,noatime,compress=zstd:1,space_cache=v2,subvol=@   0 0
-UUID=<SAME AS ABOVE>      /  btrfs   rw,noatime,compress=zstd:1,space_cache=v2,subvol=@home   0 0
 ```
 
 ### Return to installer
