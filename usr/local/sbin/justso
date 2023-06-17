@@ -5,7 +5,7 @@
 BTRFS_DEVICE=$(blkid --match-token TYPE="btrfs" --output device)
 BTRFS_MOUNT=/root/toplevel
 SNAPS="$BTRFS_MOUNT"/@snapshots
-MNT_OPTS="rw,noatime,compress=zstd,space_cache=v2"
+MNT_OPTS="rw,noatime,compress=zstd:1,space_cache=v2"
 LATEST=""
 
 # Functions
