@@ -2,8 +2,9 @@
 
 # Global Variables
 
-BTRFS_DEVICE=$(blkid --match-token TYPE="btrfs" --output device)
 BTRFS_MOUNT=/root/toplevel
+BTRFS_DEVICE=$(blkid --match-token TYPE="btrfs" --output device)
+BTRFS_DEVICE_UUID=$(blkid -s UUID --match-token TYPE="btrfs" -o value)
 SNAPS="$BTRFS_MOUNT"/@snapshots
 MNT_OPTS="rw,noatime,compress=zstd:1,space_cache=v2"
 LATEST=""
@@ -41,6 +42,14 @@ getNumSnaps() {
     echo $(btrfs subvolume list -o "${SNAPS}/${PROFILE}" | wc -l)
 }
 
+getRootFstab() {
+   echo $(grep "^UUID=.*\s\/\s.*btrfs" /etc/fstab)
+}
+
+getRootUUID() {
+    echo $(blkid -s UUID --match-token TYPE="btrfs" -o value)
+}
+
 back() {
     local PROFILE="$1"
     local HOME_FOLDER=/home/"$PROFILE"
@@ -61,7 +70,7 @@ back() {
 
 make() { # create a new profile revertable profile
     local PROFILE="$1"
-    local HOME_FOLDER=/home/"$PROFILE"
+    local HOME_FOLDER="/home/${PROFILE}"
     local NOW
     NOW=$(date --iso-8601=seconds)
 
@@ -90,23 +99,19 @@ make() { # create a new profile revertable profile
         exit 2
     fi
 
-    # mount toplevel: NO LONGER NEEDED
-    # mount -o "$MNT_OPTS" "$BTRFS_DEVICE" "$BTRFS_MOUNT"
-
     # create subvolume
     btrfs subvolume create "${BTRFS_MOUNT}/@${PROFILE}"
 
     # create entry in fstab
-    ROOT_LINE=$(grep subvol=@" " /etc/fstab)
-    TEMP_ENTRY=${ROOT_LINE//subvol=@/subvol=@"$PROFILE"}
-    NEW_ENTRY=${TEMP_ENTRY/\//\/home/"$PROFILE"}
+    UUID=$(getRootUUID)
+    NEW_ENTRY="UUID=${UUID} ${HOME_FOLDER} btrfs ${MNT_OPTS},subvol=@${PROFILE} 0 0"
     echo "$NEW_ENTRY"
 
     # Create a backup of fstab
     cp -a /etc/fstab /root/fstab_backup/fstab."${NOW}".bak
 
-    # Insert "NEW_ENTRY" into fstab
-    sed --in-place "/^.*subvol=@\s/a $NEW_ENTRY" /etc/fstab
+    # Insert "NEW_ENTRY" into fstab after root entry
+    sed --in-place "/^UUID.*\s\/\s.*btrfs/a $NEW_ENTRY" /etc/fstab
 
     # Reload daemon for new fstab
     systemctl daemon-reload
@@ -157,9 +162,9 @@ init() { # Creates environment for justso
     if ! grep -q '/root/toplevel\s' /etc/fstab; then
         #Create backup of fstab
         cp -a /etc/fstab /root/fstab_backup/fstab."${NOW}".bak
-        BTRFS_UUID=$(lsblk -o uuid,fstype | grep btrfs | cut -f 1 -d " ")
-        TOP_FS_ENTRY="UUID=${BTRFS_UUID} /root/toplevel btrfs ${MNT_OPTS} 0 0"
-        if sed --in-place "/^.*subvol=@\s/a ${TOP_FS_ENTRY}" /etc/fstab; then
+        UUID=$(getRootUUID)
+        TOP_FS_ENTRY="UUID=${UUID} /root/toplevel btrfs ${MNT_OPTS} 0 0"
+        if sed --in-place "/^UUID.*\s\/\s.*btrfs/a ${TOP_FS_ENTRY}" /etc/fstab; then
             #reload the new fstab into systemd
             systemctl daemon-reload
             echo "Successfully created entry for /root/toplevel in fstab"
