@@ -1,5 +1,12 @@
 #!/bin/bash
 
+#check for root user
+if [[ $EUID -ne 0 ]]; then
+        echo "justso must be run by user with admin privleges" 1>&2
+        exit 1
+fi
+
+
 # Global Variables
 
 BTRFS_MOUNT=/root/toplevel
