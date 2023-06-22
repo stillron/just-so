@@ -294,7 +294,7 @@ enable() { #Enable systemd service for a profile
 
     numSnaps=$(getNumSnaps "$PROFILE")
 
-    if [[ numSnaps -gt 1 ]]; then
+    if [[ numSnaps -gt 0 ]]; then
         if systemctl enable justso@"$PROFILE"; then
             return 0
         else
