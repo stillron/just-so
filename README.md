@@ -115,4 +115,4 @@ Continue through the rest of the installation process.
 * `# justso prune <user name> [Num snapshots]` Removes __n__ number of oldest snapshots.
 * (TODO) `# justso destroy <user name>` Completely removes a profile.
 * (TODO) `# justso disable <user name>` Stop rolling back user's home directory upon reboot.
-* (TODO) `# justso status <user name>` Provides information about the status of user's profile. (Enabled/Disabled; Number of snapshots; Date of latest snapshot;)
+* (TODO) `# justso status <user name>` Provides information about the status of user's profile.
