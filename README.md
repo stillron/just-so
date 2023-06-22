@@ -105,6 +105,6 @@ Continue through the rest of the installation process.
 
 > **Note:** justso must be run with admin privileges*
 
-* `# justso close init` Sets up the initial environment for justso.
+* `# justso init` Sets up the initial environment for justso.
 * `# justso make <user name>` Creates a user and corresponding home directory.
 
