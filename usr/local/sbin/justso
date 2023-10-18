@@ -307,6 +307,10 @@ enable() { #Enable systemd service for a profile
     fi
 }
 
+send() { #export latest snapshot to a file for sharing with other computers
+    local PROFILE=$1
+}
+
 disable() { #Disable systemd service for a profile
     local PROFILE=$1
 }
@@ -319,6 +323,10 @@ status() { # Display information about a profile
 
 case "$1" in
 "") ;;
+send)
+    "$@"
+    exit
+    ;;
 prune)
     "$@"
     exit
