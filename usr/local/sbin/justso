@@ -345,6 +345,14 @@ send() { #export latest snapshot to a file for sharing with other computers
    fi
 }
 
+receive() { #Import a file snapshot into a profile
+    local PROFILE=$1
+    local file=$2
+
+    gunzip -c -d "$file" | btrfs receive "${SNAPS}/${PROFILE}/"
+
+}
+
 disable() { #Disable systemd service for a profile
     local PROFILE=$1
 }
@@ -358,6 +366,10 @@ status() { # Display information about a profile
 case "$1" in
 "") ;;
 send)
+    "$@"
+    exit
+    ;;
+receive)
     "$@"
     exit
     ;;
