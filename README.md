@@ -89,7 +89,7 @@ mount /dev/<boot partition> /target/boot/efi
 
 Now we need to reflect our recent changes in fstab.  Use `nano` to edit **/target/etc/fstab**
 
-The lines for **/** and **/home** should look like the following:
+The lines for **/** and should look like the following:
 
 ```bash
 UUID=<(NO CHANGE NEEDED)> /  btrfs   rw,noatime,compress=zstd:1,space_cache=v2,subvol=@   0 0
@@ -106,13 +106,14 @@ Continue through the rest of the installation process.
 > **Note:** justso must be run with admin privileges*
 
 * `# justso init` Sets up the initial environment for justso.
-* `# justso make <user name>` Creates a user and corresponding home directory.
-* `# justso enable <user name>` Enables rolling back of user profile on reboot.
-* `# justso pin <user name>` Creates new snapshot of user's home directory.
-* `# justso back <user name>` Rolls the user's home directory back to the latest snapshot.
-* `# justso unpin <user name> [Num snapshots]` Removes the latest __n__ snapshots (defaults to 1).
-* `# justso revert <user name> [Num snapshots]` Unpins __n__ number of snapshots and rolls back to latest surviving snapshot.
-* `# justso prune <user name> [Num snapshots]` Removes __n__ number of oldest snapshots.
-* (TODO) `# justso destroy <user name>` Completely removes a profile.
-* (TODO) `# justso disable <user name>` Stop rolling back user's home directory upon reboot.
-* (TODO) `# justso status <user name>` Provides information about the status of user's profile.
+* `# justso make <profile>` Creates a user and corresponding home directory.
+* `# justso enable <profile>` Enables rolling back of user profile on reboot.
+* `# justso pin <profile>` Creates new snapshot of user's home directory.
+* `# justso back <profile>` Rolls the user's home directory back to the latest snapshot.
+* `# justso unpin <profile> [Num snapshots]` Removes the latest __n__ snapshots (defaults to 1).
+* `# justso revert <profile> [Num snapshots]` Unpins __n__ number of snapshots and rolls back to latest surviving snapshot.
+* `# justso prune <profile> [Num snapshots]` Removes __n__ number of oldest snapshots.
+* `# justso export <profile>` Creates a backup file of the latest snapshot that can be sent to other devices for import.
+* (TODO) `# justso destroy <profile>` Completely removes a profile.
+* (TODO) `# justso disable <profile>` Stop rolling back user's home directory upon reboot.
+* (TODO) `# justso status <profile>` Provides information about the status of user's profile.
