@@ -323,7 +323,8 @@ send() { #export latest snapshot to a file for sharing with other computers
     if [[ $1 == "-f" ]] || [[ $1 == "--full" ]]; then # if full send has been requested
         local PROFILE=$2
         if getLatest "$PROFILE"; then
-            btrfs send $LATEST | gzip > test.btr.gz
+            filename=$(basename $LATEST)
+            btrfs send $LATEST | gzip > "${filename}.full.tar.gz"
             echo "Created full file for $PROFILE"
         fi
     else # otherwise send an incremental snapshot
@@ -331,8 +332,9 @@ send() { #export latest snapshot to a file for sharing with other computers
         local OPTS="-p"
         numSnaps=$(getNumSnaps "$PROFILE")
         if getNextLatest "$PROFILE" && getLatest "$PROFILE"; then
+            filename=$(basename $LATEST)
             if [[ numSnaps -ge 2 ]]; then
-                btrfs send $OPTS $NEXT_LATEST $LATEST | gzip >  test.btr.gz
+                btrfs send $OPTS $NEXT_LATEST $LATEST | gzip >  "${filename}.inc.tar.gz"
                 echo "Created incremental file for $PROFILE"
             else
                 echo "Not enough snapshots to perform incremental export\nDoing full export instead"
