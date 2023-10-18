@@ -113,7 +113,7 @@ Continue through the rest of the installation process.
 * `# justso unpin <profile> [Num snapshots]` Removes the latest __n__ snapshots (defaults to 1).
 * `# justso revert <profile> [Num snapshots]` Unpins __n__ number of snapshots and rolls back to latest surviving snapshot.
 * `# justso prune <profile> [Num snapshots]` Removes __n__ number of oldest snapshots.
-* `# justso send <profile>` Creates a backup file of the latest snapshot that can be sent to other devices for import.
+* `# justso send [-f | --full ] <profile>` Creates a backup file of the latest snapshot that can be sent to other devices for import.
 * (TODO) `# justso destroy <profile>` Completely removes a profile.
 * (TODO) `# justso disable <profile>` Stop rolling back user's home directory upon reboot.
 * (TODO) `# justso status <profile>` Provides information about the status of user's profile.

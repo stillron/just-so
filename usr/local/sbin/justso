@@ -15,6 +15,7 @@ BTRFS_DEVICE_UUID=$(blkid -s UUID --match-token TYPE="btrfs" -o value)
 SNAPS="$BTRFS_MOUNT"/@snapshots
 MNT_OPTS="rw,noatime,compress=zstd:1,space_cache=v2"
 LATEST=""
+NEXT_LATEST=""
 
 # Functions
 
@@ -28,6 +29,16 @@ getLatest() {
 
     if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
         LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$PROFILE"/* | sort -n -r | head -n 1 | cut -f 4 -d " ")
+    else
+        return 2
+    fi
+}
+
+getNextLatest() {
+    PROFILE=$1
+
+    if dirs=("$BTRFS_MOUNT"/@snapshots/"$PROFILE"/*/) && [[ -d ${dirs[0]} ]]; then
+        NEXT_LATEST=$(stat -c '%y %n' "$BTRFS_MOUNT"/@snapshots/"$PROFILE"/* | sort -n -r | head -n 2 | tail -n 1 | cut -f 4 -d " ")
     else
         return 2
     fi
@@ -308,7 +319,28 @@ enable() { #Enable systemd service for a profile
 }
 
 send() { #export latest snapshot to a file for sharing with other computers
-    local PROFILE=$1
+
+    if [[ $1 == "-f" ]] || [[ $1 == "--full" ]]; then # if full send has been requested
+        local PROFILE=$2
+        if getLatest "$PROFILE"; then
+            btrfs send $LATEST | gzip > test.btr.gz
+            echo "Created full file for $PROFILE"
+        fi
+    else # otherwise send an incremental snapshot
+        local PROFILE=$1
+        local OPTS="-p"
+        numSnaps=$(getNumSnaps "$PROFILE")
+        if getNextLatest "$PROFILE" && getLatest "$PROFILE"; then
+            if [[ numSnaps -ge 2 ]]; then
+                btrfs send $OPTS $NEXT_LATEST $LATEST | gzip >  test.btr.gz
+                echo "Created incremental file for $PROFILE"
+            else
+                echo "Not enough snapshots to perform incremental export\nDoing full export instead"
+                send -f "$PROFILE"
+            fi
+        fi
+
+   fi
 }
 
 disable() { #Disable systemd service for a profile
