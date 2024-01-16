@@ -2,10 +2,9 @@
 
 #check for root user
 if [[ $EUID -ne 0 ]]; then
-        echo "justso must be run by user with admin privleges" 1>&2
-        exit 1
+    echo "justso must be run by user with admin privleges" 1>&2
+    exit 1
 fi
-
 
 # Global Variables
 
@@ -61,7 +60,7 @@ getNumSnaps() {
 }
 
 getRootFstab() {
-   echo $(grep "^UUID=.*\s\/\s.*btrfs" /etc/fstab)
+    echo $(grep "^UUID=.*\s\/\s.*btrfs" /etc/fstab)
 }
 
 getRootUUID() {
@@ -156,7 +155,7 @@ make() { # create a new profile revertable profile
 }
 
 init() { # Creates environment for justso
-    
+
     printf "Setting up system for justso\n\n"
     NOW=$(date --iso-8601=seconds)
 
@@ -318,13 +317,24 @@ enable() { #Enable systemd service for a profile
     fi
 }
 
+disable() { #Disable systemd service for a profile
+    local PROFILE=$1
+
+    if systemctl disable justso@"$PROFILE"; then
+        return 0
+    else
+        echo "Error disabling justso service for $PROFILE: @?"
+        return 2
+    fi
+}
+
 send() { #export latest snapshot to a file for sharing with other computers
 
     if [[ $1 == "-f" ]] || [[ $1 == "--full" ]]; then # if full send has been requested
         local PROFILE=$2
         if getLatest "$PROFILE"; then
             filename=$(basename $LATEST)
-            btrfs send $LATEST | gzip > "${filename}.full.tar.gz"
+            btrfs send $LATEST | gzip >"${filename}.full.tar.gz"
             echo "Created full file for $PROFILE"
         fi
     else # otherwise send an incremental snapshot
@@ -334,7 +344,7 @@ send() { #export latest snapshot to a file for sharing with other computers
         if getNextLatest "$PROFILE" && getLatest "$PROFILE"; then
             filename=$(basename $LATEST)
             if [[ numSnaps -ge 2 ]]; then
-                btrfs send $OPTS $NEXT_LATEST $LATEST | gzip >  "${filename}.inc.tar.gz"
+                btrfs send $OPTS $NEXT_LATEST $LATEST | gzip >"${filename}.inc.tar.gz"
                 echo "Created incremental file for $PROFILE"
             else
                 echo "Not enough snapshots to perform incremental export\nDoing full export instead"
@@ -342,7 +352,7 @@ send() { #export latest snapshot to a file for sharing with other computers
             fi
         fi
 
-   fi
+    fi
 }
 
 receive() { #Import a file snapshot into a profile
@@ -353,9 +363,6 @@ receive() { #Import a file snapshot into a profile
 
 }
 
-disable() { #Disable systemd service for a profile
-    local PROFILE=$1
-}
 
 status() { # Display information about a profile
     local PROFILE=$1

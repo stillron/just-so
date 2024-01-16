@@ -108,6 +108,7 @@ Continue through the rest of the installation process.
 * `# justso init` Sets up the initial environment for justso.
 * `# justso make <profile>` Creates a user and corresponding home directory.
 * `# justso enable <profile>` Enables rolling back of user profile on reboot.
+* `# justso disable <profile>` Stop rolling back user's home directory upon reboot.
 * `# justso pin <profile>` Creates new snapshot of user's home directory.
 * `# justso back <profile>` Rolls the user's home directory back to the latest snapshot.
 * `# justso unpin <profile> [Num snapshots]` Removes the latest __n__ snapshots (defaults to 1).
@@ -116,5 +117,4 @@ Continue through the rest of the installation process.
 * `# justso send [-f | --full ] <profile>` Creates a backup file of the latest snapshot that can be sent to other devices for import.
 * `# justso receive <profile> <path to exported btrfs file>` Import a file of a btrfs snapshot into the profile's snapshot folder to be used on next reboot.
 * (TODO) `# justso destroy <profile>` Completely removes a profile.
-* (TODO) `# justso disable <profile>` Stop rolling back user's home directory upon reboot.
 * (TODO) `# justso status <profile>` Provides information about the status of user's profile.
