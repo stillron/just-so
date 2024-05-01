@@ -114,7 +114,7 @@ Continue through the rest of the installation process.
 * `# justso unpin <profile> [Num snapshots]` Removes the latest __n__ snapshots (defaults to 1).
 * `# justso revert <profile> [Num snapshots]` Unpins __n__ number of snapshots and rolls back to latest surviving snapshot.
 * `# justso prune <profile> [Num snapshots]` Removes __n__ number of oldest snapshots.
-* `# justso send [-f | --full ] <profile>` Creates a backup file of the latest snapshot that can be sent to other devices for import.
+* `# justso send [-i | --incremental ] <profile>` Creates a backup file of the latest snapshot that can be sent to other devices for import.
 * `# justso receive <profile> <path to exported btrfs file>` Import a file of a btrfs snapshot into the profile's snapshot folder to be used on next reboot.
 * (TODO) `# justso destroy <profile>` Completely removes a profile.
 * (TODO) `# justso status <profile>` Provides information about the status of user's profile.

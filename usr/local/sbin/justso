@@ -330,15 +330,8 @@ disable() { #Disable systemd service for a profile
 
 send() { #export latest snapshot to a file for sharing with other computers
 
-    if [[ $1 == "-f" ]] || [[ $1 == "--full" ]]; then # if full send has been requested
+    if [[ $1 == "-i" ]] || [[ $1 == "--incremental" ]]; then # if incremental send has been requested
         local PROFILE=$2
-        if getLatest "$PROFILE"; then
-            filename=$(basename $LATEST)
-            btrfs send $LATEST | gzip >"${filename}.full.tar.gz"
-            echo "Created full file for $PROFILE"
-        fi
-    else # otherwise send an incremental snapshot
-        local PROFILE=$1
         local OPTS="-p"
         numSnaps=$(getNumSnaps "$PROFILE")
         if getNextLatest "$PROFILE" && getLatest "$PROFILE"; then
@@ -346,10 +339,22 @@ send() { #export latest snapshot to a file for sharing with other computers
             if [[ numSnaps -ge 2 ]]; then
                 btrfs send $OPTS $NEXT_LATEST $LATEST | gzip >"${filename}.inc.tar.gz"
                 echo "Created incremental file for $PROFILE"
+                return 0
             else
                 echo "Not enough snapshots to perform incremental export\nDoing full export instead"
-                send -f "$PROFILE"
+                send "$PROFILE"
             fi
+        fi
+    else # otherwise send a full snapshot
+        local PROFILE=$1
+        if getLatest "$PROFILE"; then
+            filename=$(basename $LATEST)
+            btrfs send $LATEST | gzip >"${filename}.full.tar.gz"
+            echo "Created full file for $PROFILE"
+            return 0
+        else
+        echo "Profile ${1} doesn't exist"
+        return 2
         fi
 
     fi
