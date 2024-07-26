@@ -218,11 +218,11 @@ init() { # Creates environment for justso
 }
 
 pin() { #Creates a new snapshot of a profile
-    echo "Creating pin for ${1}"
     local PROFILE="$1"
     local HOME_FOLDER=/home/"$PROFILE"
     local NOW
     NOW=$(date +%Y%m%d%H%M%S)
+    echo "Creating pin for ${PROFILE}"
 
     btrfs subvolume snapshot -r "$HOME_FOLDER" "${SNAPS}/${PROFILE}/${PROFILE}-${NOW}"
 }
@@ -230,7 +230,7 @@ pin() { #Creates a new snapshot of a profile
 unpin() { #Removes the latest n snapshots defaults to 1
     local PROFILE="$1"
     num_back="${2:-1}"
-    echo "Hello world, I'm unpin.  Looks like you wanna rollback $num_back snapshot(s) from $PROFILE"
+    echo "Attempting to remove ${num_back} snapshot(s) from ${PROFILE}"
     for ((i = 1; i <= num_back; i++)); do
         getLatest "$PROFILE"
         if [[ "$LATEST" != "" ]]; then
