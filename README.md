@@ -1,120 +1,68 @@
-# JustSo
+# Just-So
 
-BTRFS-based snapshots provide automatic rollbacks of user home folders.
+**Just-So** is a lightweight, system-level utility that restores Linux user home directories to a clean state using **Btrfs snapshots**. Designed for environments with shared public computers—such as libraries, classrooms, or labs—Just-So ensures a consistent, privacy-respecting experience for each user session.
 
-## Setup
+---
 
-### Debian
+## ✨ Features
 
-* Start the setup process by Selecting `Advanced Options > Expert Install`
-* Go through:
-  * Language
-  * Keyboard
-  * Detect installation media
-  * Load Installer components
-  * Detect Network Hardware
-  * Configure the Network
-  * Setup users and passwords (lebtech)
-  * Configure the clock
-  * Detect disks
+- Automatically restores user home directories on every reboot
+- Creates and manages Btrfs snapshots for rollback
+- Supports per-user rollback via templated systemd service (`justso@username.service`)
+- Includes tools for snapshot pinning, pruning, and testing
+- Set up a clean desktop environment once and deploy it to dozens or hundreds of machines using snapshot export/import
+- Easy-to-use command-line interface
 
-* Then, at `Partition disks` create new GPT partition
+---
 
-#### Create EFI Partition
+## 📦 Installation
 
-* Go down to `FREE SPACE` and press enter to create the first (EFI) partition.
-* Choose `Create a new partition`
-* Enter 1 GB for size and select `Beginning` for position of partition.
-* On the next screen, choose `Use as` and select `EFI System Partition`
-* Choose `Done` from menu
+To install Just-So, refer to the [INSTALL](docs/INSTALL.md) guide for manual setup and file placement.
 
-#### Create Swap Partition
+For system configuration with Btrfs and subvolume layout, see [SETUP](docs/SETUP.md).
 
-* Go down to `FREE SPACE` again to setup swap partition.
-* Choose `Create a new partition`
-* Make size 1.5 x Amount of RAM on the machine and select `Beginning` for position of partition.
-* On the next screen, choose `Use as` and select `Swap area`
-* Choose `Done` from menu
+---
 
-#### Create BTRFS partition
+## 🚀 Usage
 
-* Go down to `FREE SPACE` again to setup BTRFS partition.
-* Choose `Create a new partition`
-* Leave size at remaining space available.
-* On the next screen, choose `Use as` and select `btrfs journaling filesystem`
-* Choose `Done`
+Once installed and configured, use Just-So to create and manage snapshots, enable auto-rollback for users, and maintain a clean computing environment.
 
-#### Writing out the partitions to disk
+See the [USAGE](docs/USAGE.md) guide for detailed commands and examples.
 
-* Arrow down to `Finish partitioning and write changes to disk` and press enter.
-* Answer `Yes` to all prompts
+---
 
-### Setting up initial subvolumes
+## 🧠 Why This Exists
 
-**DO NOT CONTINUE TO NEXT STEP in installer** (yet).
+In public computing environments, maintaining privacy and system consistency is essential. As an IT librarian, I needed a fast and low-maintenance solution to ensure that each user session starts from a known-good state without manual reimaging or full system lockdown.
 
-* Instead press CTRL+ALT+F2 to get a terminal window.
+A key feature of Just-So is the ability to set up a single reference desktop on one machine (or VM), export the snapshot, and then import that exact snapshot onto any number of public-use computers. This allows for consistent, reproducible desktop environments across an entire fleet with minimal effort.
 
-* Enter `df` command to see which partitions are mounted at:
+This project is also part of a broader goal: making open source tools like Linux more approachable and practical for libraries. Many public libraries would benefit from using free and open technologies, but they need tools that are stable, repeatable, and easy to deploy. Just-So aims to be one of those tools.
 
-```bash
-/target
-/target/boot/efi
-```
+---
 
-* umount the two above partitions.
-* mount whatever partition was previously mounted to `/target` to `/mnt`
-* cd to `/mnt`
-* rename root snapshot from `@rootfs` to `@`
+## 📚 Documentation Index
 
-* mount the root subvolume to target with:
+- [SETUP](docs/SETUP.md): Configure Btrfs and system layout
+- [INSTALL](docs/INSTALL.md): File installation steps
+- [USAGE](docs/USAGE.md): CLI usage and examples
+- [ARCHITECTURE](docs/ARCHITECTURE.md): How it works under the hood
 
-```bash
-mount -o rw,noatime,compress=zstd:1,space_cache=v2,subvol=@ /dev/<root partition> /target
-```
+---
 
-* create efi directories to mount to inside of **/target**
 
-```bash
-mkdir -p /target/boot/efi
-```
+## 🌍 Vision
 
-* Mount **/boot/efi** with
+Just-So is part of a larger effort to make open source software more usable and sustainable in public libraries. While it was created to solve a specific challenge — maintaining consistent and private public-access computers — it also fits into a broader philosophy:
 
-```bash
-mount /dev/<boot partition> /target/boot/efi
-```
+Public libraries should be able to confidently adopt Linux and other free tools without requiring deep technical expertise. Projects like Just-So (and its sibling tool, Stations) are designed to help make that possible.
 
-### Updating /etc/fstab
+Read more about the mission in the [VISION](docs/VISION.md) document.
 
-Now we need to reflect our recent changes in fstab.  Use `nano` to edit **/target/etc/fstab**
+---
 
-The lines for **/** and should look like the following:
+## 🪪 License
 
-```bash
-UUID=<(NO CHANGE NEEDED)> /  btrfs   rw,noatime,compress=zstd:1,space_cache=v2,subvol=@   0 0
-```
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-### Return to installer
 
-All manual updates are now done.  Return to installer by typing `exit` in the command line and then entering `CTRL+ALT+F1`
-
-Continue through the rest of the installation process.
-
-## Usage
-
-> **Note:** justso must be run with admin privileges*
-
-* `# justso init` Sets up the initial environment for justso.
-* `# justso make <profile>` Creates a user and corresponding home directory.
-* `# justso enable <profile>` Enables rolling back of user profile on reboot.
-* `# justso disable <profile>` Stop rolling back user's home directory upon reboot.
-* `# justso pin <profile>` Creates new snapshot of user's home directory.
-* `# justso back <profile>` Rolls the user's home directory back to the latest snapshot.
-* `# justso unpin <profile> [Num snapshots]` Removes the latest __n__ snapshots (defaults to 1).
-* `# justso revert <profile> [Num snapshots]` Unpins __n__ number of snapshots and rolls back to latest surviving snapshot.
-* `# justso prune <profile> [Num snapshots]` Removes __n__ number of oldest snapshots.
-* `# justso send [-i | --incremental ] <profile>` Creates a backup file of the latest snapshot that can be sent to other devices for import.
-* `# justso receive <profile> <path to exported btrfs file>` Import a file of a btrfs snapshot into the profile's snapshot folder to be used on next reboot.
-* (TODO) `# justso destroy <profile>` Completely removes a profile.
-* (TODO) `# justso status <profile>` Provides information about the status of user's profile.
