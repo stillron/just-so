@@ -43,10 +43,11 @@ This project is also part of a broader goal: making open source tools like Linux
 
 ## 📚 Documentation Index
 
-- [SETUP](docs/SETUP.md): Configure Btrfs and system layout
 - [INSTALL](docs/INSTALL.md): File installation steps
 - [USAGE](docs/USAGE.md): CLI usage and examples
 - [ARCHITECTURE](docs/ARCHITECTURE.md): How it works under the hood
+- [VISION](docs/VISION.md): The philosophy behind Just-So and its role in promoting open source in libraries
+
 
 ---
 
