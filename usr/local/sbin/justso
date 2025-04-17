@@ -70,20 +70,28 @@ getRootUUID() {
 back() {
     local PROFILE="$1"
     local HOME_FOLDER=/home/"$PROFILE"
+    local SUBVOL_PATH="$BTRFS_MOUNT"/@"$PROFILE"
 
     if getLatest "$PROFILE"; then
         printf 'Snapshots exist for %s.\nBeginning rollback to latest snapshot at %s\n' "$PROFILE" "$LATEST"
-        umount "$HOME_FOLDER"
-        btrfs subvolume delete -c "$BTRFS_MOUNT"/@"$PROFILE"
-        btrfs subvolume snapshot "$LATEST" "$BTRFS_MOUNT"/@"$PROFILE"
+
+        # Check if the subvolume exists before trying to unmount and delete it
+        if btrfs subvolume show "$SUBVOL_PATH" &>/dev/null; then
+            umount "$HOME_FOLDER"
+            btrfs subvolume delete -c "$SUBVOL_PATH"
+        else
+            echo "Subvolume '$SUBVOL_PATH' does not exist. Skipping deletion."
+        fi
+
+        btrfs subvolume snapshot "$LATEST" "$SUBVOL_PATH"
         mount "$HOME_FOLDER"
         return 0
     else
         echo "No snapshots exist for '$PROFILE'"
-        # umount "$BTRFS_MOUNT"
         return 2
     fi
 }
+
 
 make() { # create a new profile revertable profile
     local PROFILE="$1"

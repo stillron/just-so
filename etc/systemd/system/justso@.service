@@ -1,17 +1,15 @@
 [Unit]
-Description=Rollback Service for %i
-Before=gdm.service
-Requires=local-fs.target
-
+Description=Just-So rollback/prepare service for %i
+Before=home-%i.mount
+After=root-toplevel.mount
+Requires=root-toplevel.mount
+DefaultDependencies=no
 
 [Service]
 Type=oneshot
+RemainAfterExit=true
 ExecStart=/bin/bash /usr/local/sbin/justso back %i
-RemainAfterExit=True
-#Allow the system to settle
-#ExecStop=/bin/sleep 1
 ExecStop=/bin/bash /usr/local/sbin/justso back %i
 
 [Install]
-WantedBy=multi-user.target
-
+WantedBy=home-%i.mount
