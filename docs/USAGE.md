@@ -95,19 +95,44 @@ sudo justso prune alice 3       # Remove 3 oldest snapshots
 
 ## 🚚 Export and Import Snapshots
 
-Export the latest snapshot to a compressed archive:
+### Export the latest snapshot to a compressed archive
+
 ```bash
 sudo justso send <username>
 ```
 
-This will generate a `.gz` file containing the user's most recent snapshot, which can be transferred to other systems.
+This exports a full `.gz` archive of the user's most recent snapshot, which can be transferred to another system.
 
-Import a previously exported snapshot:
+To export **only changes** since the last export, use the `-i` flag:
+
+```bash
+sudo justso send -i <username>
+```
+
+This creates an **incremental** archive, smaller and faster to transfer.  
+> ⚠️ You must run a full export at least once before using `-i`, or the command may fail or default to full export.
+
+---
+
+### Import a previously exported snapshot
+
 ```bash
 sudo justso receive <username> <snapshot-file.gz>
 ```
 
-This restores the snapshot into the appropriate `.snapshots/username/` directory for use in rollback.
+This restores a snapshot into `.snapshots/<username>/` for rollback use.
+
+If you have a **full** snapshot followed by **incremental** snapshots, import them **in order** of timestamp:
+
+```bash
+sudo justso receive <username> profile-20250506103000.tar.gz          # Full
+sudo justso receive <username> profile-20250507120000.inc.tar.gz      # Incremental 1
+sudo justso receive <username> profile-20250508153000.inc.tar.gz      # Incremental 2
+```
+
+- ✅ Full snapshots have `.tar.gz` 
+- 🔁 Incrementals are labeled with `.inc.tar.gz` 
+- 📅 Use the timestamps in the filenames to apply them in the correct order
 
 ---
 
